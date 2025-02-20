@@ -4,6 +4,7 @@ require_once __DIR__.'/../vendor/autoload.php';
 use Simplex\ContentLengthListener;
 use Simplex\Framework;
 use Simplex\GoogleListener;
+use Simplex\StringResponseListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
@@ -32,13 +33,11 @@ $dispatcher = new EventDispatcher();
 $dispatcher->addSubscriber(new RouterListener($matcher, $requestStack));
 $dispatcher->addSubscriber(new ContentLengthListener());
 $dispatcher->addSubscriber(new GoogleListener());
-
-$errorHandler = function (Symfony\Component\ErrorHandler\Exception\FlattenException $exception): Response {
-    $msg = 'Something went wrong! ('.$exception->getMessage().')';
-
-    return new Response($msg, $exception->getStatusCode());
-};
-$dispatcher->addSubscriber(new ErrorListener($errorHandler));
+$listener = new ErrorListener(
+    'Calendar\Controller\ErrorController::exception'
+);
+$dispatcher->addSubscriber(new StringResponseListener());
+$dispatcher->addSubscriber($listener);
 
 $framework = new Framework($dispatcher, $matcher, $controllerResolver,$requestStack, $argumentResolver);
 $framework = new HttpCache(
